@@ -1,0 +1,38 @@
+---
+- name: Despliegue y Actualización de Componentes Locales
+  hosts: localhost # Ejecutar en la máquina local (donde está Docker Desktop)
+  connection: local
+  vars:
+    # Esta variable será inyectada por el pipeline (GitHub Actions)
+    api_gateway_url: "api-gateway-placeholder.execute-api.us-east-1.amazonaws.com" 
+    project_path: "{{ playbook_dir }}/.." # Ruta al directorio principal del proyecto
+
+  tasks:
+    - name: 1. Crear la Imagen más Reciente del Frontend
+      community.docker.docker_image:
+        name: appfactory/frontend:latest
+        build:
+          path: "{{ project_path }}/frontend"
+        source: build
+        force_tag: true
+        state: present
+        
+    - name: 2. Pull de la imagen de NGINX
+      community.docker.docker_image:
+        name: nginx:alpine
+        source: pull
+        state: present
+
+    - name: 3. Reemplazar la URL de la API Gateway en docker-compose.yml
+      ansible.builtin.replace:
+        path: "{{ project_path }}/nginx-proxy/docker-compose.yml"
+        regexp: 'API_GATEWAY_URL: "(.*)"'
+        replace: 'API_GATEWAY_URL: "{{ api_gateway_url }}"'
+        backup: yes
+      delegate_to: localhost
+
+    - name: 4. Reiniciar/Actualizar el Stack de Docker Compose
+      community.docker.docker_compose:
+        project_src: "{{ project_path }}/nginx-proxy"
+        state: present # Mantiene el stack en ejecución
+        # pull: yes # Esto se puede omitir si ya se hizo pull/build

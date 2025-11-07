@@ -1,0 +1,84 @@
+name: Pipeline CI/CD H�brido
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # Permite ejecuci�n manual
+
+env:
+  AWS_REGION: us-east-1 # Define la regi�n de AWS
+
+jobs:
+  hybrid_deploy:
+    runs-on: ubuntu-latest # Se ejecuta en un runner de GitHub
+
+    steps:
+      - name: Checkout del C�digo
+        uses: actions/checkout@v4
+
+      # =========================================================
+      # 1. AWS - Despliegue de Infraestructura (Terraform)
+      # =========================================================
+      - name: Configurar Credenciales de AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ us-east-1 }}
+
+      - name: Configurar Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Inicializar Terraform
+        run: terraform init
+        working-directory: ./infra-aws
+
+      - name: Aplicar Terraform (Desplegar Lambda y API Gateway)
+        id: apply_tf
+        run: terraform apply -auto-approve
+        working-directory: ./infra-aws
+      
+      - name: Obtener Output del API Gateway Endpoint
+        id: get_output
+        run: |
+          API_ENDPOINT=$(terraform output -raw api_gateway_endpoint)
+          echo "API_GATEWAY_ENDPOINT=$API_ENDPOINT" >> $GITHUB_ENV
+        working-directory: ./infra-aws
+
+      # =========================================================
+      # 2. Local - Despliegue y Configuraci�n (Ansible + Docker)
+      # =========================================================
+      - name: Configurar Ansible
+        uses: dawidd6/action-ansible-playbook@v2
+        with:
+          # Para este paso, asumimos que has configurado un agente 
+          # local que puede ejecutar comandos SSH en tu m�quina (Windows/PowerShell)
+          # Esto es complejo en un runner de GH, as� que SIMULAMOS el paso
+          # y nos enfocamos en el build/push de la imagen
+          playbook: false # No ejecutaremos el playbook real en el runner de GH
+
+      - name: 2.1. Construir la Imagen del Frontend
+        run: docker build -t appfactory/frontend:${{ github.sha }} ./frontend
+      
+      - name: 2.2. Login en Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: 2.3. Push de la Imagen del Frontend a Docker Hub
+        run: docker push appfactory/frontend:${{ github.sha }}
+
+      - name: 2.4. Simulaci�n de Ejecuci�n de Ansible Local
+        # En un entorno real, aqu� un script en el host local (PowerShell)
+        # o un runner auto-hosteado de GitHub Action ejecutar�a el playbook de Ansible.
+        # El playbook de Ansible ejecutar�a el 'docker pull' y 'docker-compose up -d'
+        run: |
+          echo "Simulando ejecuci�n de Ansible en el host local..."
+          echo "Ejecutar�a: ansible-playbook config-local/deploy-local.yml -e api_gateway_url=${{ env.API_GATEWAY_ENDPOINT }} -e frontend_image=appfactory/frontend:${{ github.sha }}"
+          echo "---"
+          echo "El host local har�a:"
+          echo "1. docker pull appfactory/frontend:${{ github.sha }}"
+          echo "2. Reemplazar�a API_GATEWAY_URL en docker-compose.yml con: ${{ env.API_GATEWAY_ENDPOINT }}"
+          echo "3. docker compose up -d --force-recreate nginx-proxy"

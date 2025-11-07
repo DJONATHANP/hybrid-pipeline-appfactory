@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>AppFactory Frontend Local</title>
+</head>
+<body>
+    <h1>¡Bienvenido a AppFactory!</h1>
+    <p>Este es el frontend local.</p>
+    <p>Llamando a la API de procesamiento (API Gateway/Lambda)...</p>
+    <div id="api-response">Cargando...</div>
+    <script>
+        // En un escenario real, aquí iría la lógica de autenticación (OIDC/OAuth2)
+        // para obtener un token y pasarlo a la llamada a la API.
+        // Simulamos la llamada a través de NGINX, que actúa como proxy a la API Gateway de AWS.
+        const API_ENDPOINT = '/api/process';
+
+        fetch(API_ENDPOINT, {
+            // Si usáramos una API Key, se añadiría aquí:
+            // headers: { 'x-api-key': 'SU_API_KEY_SIMULADA' }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Respuesta de red no satisfactoria');
+            }
+            return response.json();
+        })
+        .then(data => {
+            document.getElementById('api-response').innerText = 'Respuesta de la API: ' + JSON.stringify(data);
+        })
+        .catch(error => {
+            document.getElementById('api-response').innerText = 'Error al conectar con la API: ' + error.message;
+            console.error('Error:', error);
+        });
+    </script>
+</body>
+</html>
