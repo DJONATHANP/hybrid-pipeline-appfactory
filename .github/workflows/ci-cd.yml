@@ -52,8 +52,11 @@ jobs:
       # 2. Local - Despliegue y Configuracion (Ansible + Docker)
       # =========================================================
       - name: Configurar Ansible
-        # Solo usamos esta acción para instalar Ansible en el runner.
         uses: dawidd6/action-ansible-playbook@v2
+        with:
+          # Pasamos un parámetro de configuración simple que no requiere la ejecución de un playbook.
+          # Esto satisface el requisito de entrada del "with" sin ejecutar un playbook.
+          requirements: ""
         # No especificamos 'with', ya que no queremos que ejecute nada.
           # Para este paso, asumimos que has configurado un agente 
           # local que puede ejecutar comandos SSH en tu m�quina (Windows/PowerShell)
