@@ -54,6 +54,7 @@ jobs:
       - name: Configurar Ansible
         uses: dawidd6/action-ansible-playbook@v2
         with:
+          requirements: "" # <--- Esta línea es la corrección crucial.
           # Pasamos un parámetro de configuración simple que no requiere la ejecución de un playbook.
           # Esto satisface el requisito de entrada del "with" sin ejecutar un playbook.
           requirements: ""
