@@ -22,7 +22,7 @@ data "archive_file" "lambda_zip" {
 
 # Rol de IAM para Lambda (permiso b�sico de ejecuci�n)
 resource "aws_iam_role" "lambda_exec_role" {
-  name = "AppFactoryLambdaExecutionRole"
+  name = "AppFactoryLambdaExecutionRole-PROD" 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -45,7 +45,7 @@ resource "aws_iam_role_policy_attachment" "lambda_logs" {
 
 # Recurso Lambda Function
 resource "aws_lambda_function" "api_lambda" {
-  function_name    = "AppFactoryProcessingAPI"
+  function_name    = "AppFactoryProcessingAPI-PROD"
   filename         = data.archive_file.lambda_zip.output_path
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
   handler          = "lambda_function.lambda_handler"
