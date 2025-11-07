@@ -42,7 +42,9 @@ jobs:
       - name: Obtener Output del API Gateway Endpoint
         id: get_output
         run: |
+          # Captura el output de Terraform
           API_ENDPOINT=$(terraform output -raw api_gateway_endpoint)
+          # Exporta la variable para que esté disponible en 'env' para el resto de los pasos
           echo "API_GATEWAY_ENDPOINT=$API_ENDPOINT" >> $GITHUB_ENV
         working-directory: ./infra-aws
 
@@ -71,15 +73,13 @@ jobs:
       - name: 2.3. Push de la Imagen del Frontend a Docker Hub
         run: docker push appfactory/frontend:${{ github.sha }}
 
-      - name: 2.4. Simulacion de Ejecucion de Ansible Local
-        # En un entorno real, aqui un script en el host local (PowerShell)
-        # o un runner auto-hosteado de GitHub Action ejecutaria el playbook de Ansible.
-        # El playbook de Ansible ejecutaría el 'docker pull' y 'docker-compose up -d'
+      - name: 2.4. Simulación de Ejecución de Ansible Local
         run: |
-          echo "Simulando ejecucion de Ansible en el host local..."
-          echo "Ejecutara: ansible-playbook config-local/deploy-local.yml -e api_gateway_url=${{ env.API_GATEWAY_ENDPOINT }} -e frontend_image=appfactory/frontend:${{ github.sha }}"
+          echo "Simulando ejecución de Ansible en el host local..."
+          # Usamos ${{ env.API_GATEWAY_ENDPOINT }} para la URL obtenida del output de Terraform
+          echo "Ejecutaría: ansible-playbook config-local/deploy-local.yml -e api_gateway_url=${{ env.API_GATEWAY_ENDPOINT }} -e frontend_image=appfactory/frontend:${{ github.sha }}"
           echo "---"
-          echo "El host local hara:"
+          echo "El host local haría:"
           echo "1. docker pull appfactory/frontend:${{ github.sha }}"
-          echo "2. Reemplazara API_GATEWAY_URL en docker-compose.yml con: ${{ env.API_GATEWAY_ENDPOINT }}"
+          echo "2. Reemplazaría API_GATEWAY_URL en docker-compose.yml con: ${{ env.API_GATEWAY_ENDPOINT }}"
           echo "3. docker compose up -d --force-recreate nginx-proxy"
