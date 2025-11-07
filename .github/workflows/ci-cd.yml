@@ -1,13 +1,13 @@
-name: Pipeline CI/CD Hibrido
+name: Pipeline CI/CD Híbrido
 
 on:
   push:
     branches:
       - main
-  workflow_dispatch: # Permite ejecuci�n manual
+  workflow_dispatch: # Permite ejecución manual
 
 env:
-  AWS_REGION: us-east-1 # Define la regi�n de AWS
+  AWS_REGION: us-east-1 # Define la región de AWS
 
 jobs:
   hybrid_deploy:
@@ -54,16 +54,8 @@ jobs:
       - name: Configurar Ansible
         uses: dawidd6/action-ansible-playbook@v2
         with:
-          requirements: "" # <--- Esta línea es la corrección crucial.
-          # Pasamos un parámetro de configuración simple que no requiere la ejecución de un playbook.
-          # Esto satisface el requisito de entrada del "with" sin ejecutar un playbook.
-          requirements: ""
-        # No especificamos 'with', ya que no queremos que ejecute nada.
-          # Para este paso, asumimos que has configurado un agente 
-          # local que puede ejecutar comandos SSH en tu m�quina (Windows/PowerShell)
-          # Esto es complejo en un runner de GH, as� que SIMULAMOS el paso
-          # y nos enfocamos en el build/push de la imagen
-          #playbook: false # No ejecutaremos el playbook real en el runner de GH
+          # Usamos un solo parámetro no conflictivo para instalar Ansible sin ejecutar un playbook.
+          requirements: "" 
 
       - name: 2.1. Construir la Imagen del Frontend
         run: docker build -t appfactory/frontend:${{ github.sha }} ./frontend
