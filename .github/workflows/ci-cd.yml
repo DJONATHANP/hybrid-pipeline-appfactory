@@ -54,7 +54,8 @@ jobs:
       - name: Configurar Ansible
         uses: dawidd6/action-ansible-playbook@v2
         with:
-          # CORRECCIÓN: Usamos este parámetro no conflictivo para que la acción no pida 'playbook'.
+          # CORRECCIÓN FINAL: Añadimos 'playbook: ""' explícitamente para evitar el error.
+          playbook: "" 
           requirements: "" 
 
       - name: 2.1. Construir la Imagen del Frontend
@@ -77,8 +78,5 @@ jobs:
           echo "---"
           echo "El host local haría:"
           echo "1. docker pull appfactory/frontend:${{ github.sha }}"
-          echo "2. Reemplazaría API_GATEWAY_URL en docker-compose.yml con: ${{ env.API_GATEWAY_ENDPOINT }}"
-          echo "3. docker compose up -d --force-recreate nginx-proxy"
-
           echo "2. Reemplazaría API_GATEWAY_URL en docker-compose.yml con: ${{ env.API_GATEWAY_ENDPOINT }}"
           echo "3. docker compose up -d --force-recreate nginx-proxy"
