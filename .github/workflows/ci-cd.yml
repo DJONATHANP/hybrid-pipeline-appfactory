@@ -1,4 +1,4 @@
-name: Pipeline CI/CD H�brido
+name: Pipeline CI/CD Hibrido
 
 on:
   push:
@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest # Se ejecuta en un runner de GitHub
 
     steps:
-      - name: Checkout del C�digo
+      - name: Checkout del Codigo
         uses: actions/checkout@v4
 
       # =========================================================
@@ -47,16 +47,17 @@ jobs:
         working-directory: ./infra-aws
 
       # =========================================================
-      # 2. Local - Despliegue y Configuraci�n (Ansible + Docker)
+      # 2. Local - Despliegue y Configuracion (Ansible + Docker)
       # =========================================================
       - name: Configurar Ansible
+        # Solo usamos esta acción para instalar Ansible en el runner.
         uses: dawidd6/action-ansible-playbook@v2
-        with:
+        # No especificamos 'with', ya que no queremos que ejecute nada.
           # Para este paso, asumimos que has configurado un agente 
           # local que puede ejecutar comandos SSH en tu m�quina (Windows/PowerShell)
           # Esto es complejo en un runner de GH, as� que SIMULAMOS el paso
           # y nos enfocamos en el build/push de la imagen
-          playbook: false # No ejecutaremos el playbook real en el runner de GH
+          #playbook: false # No ejecutaremos el playbook real en el runner de GH
 
       - name: 2.1. Construir la Imagen del Frontend
         run: docker build -t appfactory/frontend:${{ github.sha }} ./frontend
@@ -70,15 +71,15 @@ jobs:
       - name: 2.3. Push de la Imagen del Frontend a Docker Hub
         run: docker push appfactory/frontend:${{ github.sha }}
 
-      - name: 2.4. Simulaci�n de Ejecuci�n de Ansible Local
-        # En un entorno real, aqu� un script en el host local (PowerShell)
-        # o un runner auto-hosteado de GitHub Action ejecutar�a el playbook de Ansible.
-        # El playbook de Ansible ejecutar�a el 'docker pull' y 'docker-compose up -d'
+      - name: 2.4. Simulacion de Ejecucion de Ansible Local
+        # En un entorno real, aqui un script en el host local (PowerShell)
+        # o un runner auto-hosteado de GitHub Action ejecutaria el playbook de Ansible.
+        # El playbook de Ansible ejecutaría el 'docker pull' y 'docker-compose up -d'
         run: |
-          echo "Simulando ejecuci�n de Ansible en el host local..."
-          echo "Ejecutar�a: ansible-playbook config-local/deploy-local.yml -e api_gateway_url=${{ env.API_GATEWAY_ENDPOINT }} -e frontend_image=appfactory/frontend:${{ github.sha }}"
+          echo "Simulando ejecucion de Ansible en el host local..."
+          echo "Ejecutara: ansible-playbook config-local/deploy-local.yml -e api_gateway_url=${{ env.API_GATEWAY_ENDPOINT }} -e frontend_image=appfactory/frontend:${{ github.sha }}"
           echo "---"
-          echo "El host local har�a:"
+          echo "El host local hara:"
           echo "1. docker pull appfactory/frontend:${{ github.sha }}"
-          echo "2. Reemplazar�a API_GATEWAY_URL en docker-compose.yml con: ${{ env.API_GATEWAY_ENDPOINT }}"
+          echo "2. Reemplazara API_GATEWAY_URL en docker-compose.yml con: ${{ env.API_GATEWAY_ENDPOINT }}"
           echo "3. docker compose up -d --force-recreate nginx-proxy"
