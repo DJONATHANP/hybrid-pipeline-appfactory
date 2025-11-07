@@ -13,14 +13,14 @@ provider "aws" {
 }
 
 # 2. AWS Lambda
-# Archivo ZIP de la función
+# Archivo ZIP de la funciï¿½n
 data "archive_file" "lambda_zip" {
   type        = "zip"
   source_dir  = "../api-lambda"
   output_path = "lambda_function_payload.zip"
 }
 
-# Rol de IAM para Lambda (permiso básico de ejecución)
+# Rol de IAM para Lambda (permiso bï¿½sico de ejecuciï¿½n)
 resource "aws_iam_role" "lambda_exec_role" {
   name = "AppFactoryLambdaExecutionRole"
   assume_role_policy = jsonencode({
@@ -37,7 +37,7 @@ resource "aws_iam_role" "lambda_exec_role" {
   })
 }
 
-# Adjuntar política para CloudWatch Logs
+# Adjuntar politica para CloudWatch Logs
 resource "aws_iam_role_policy_attachment" "lambda_logs" {
   role       = aws_iam_role.lambda_exec_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
@@ -58,9 +58,17 @@ resource "aws_lambda_function" "api_lambda" {
 resource "aws_apigatewayv2_api" "http_api" {
   name          = "AppFactoryHybridAPI"
   protocol_type = "HTTP"
+
+  # CORRECCIÃ“N: ConfiguraciÃ³n CORS como bloque anidado
+  cors_configuration {
+    allow_methods = ["*"]
+    allow_origins = ["*"]
+    allow_headers = ["content-type", "x-api-key"]
+    max_age       = 300
+  }
 }
 
-# Integración Lambda
+# Integracion Lambda
 resource "aws_apigatewayv2_integration" "lambda_integration" {
   api_id             = aws_apigatewayv2_api.http_api.id
   integration_type   = "AWS_PROXY"
@@ -90,13 +98,4 @@ resource "aws_lambda_permission" "apigw_lambda_permission" {
   function_name = aws_lambda_function.api_lambda.function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.http_api.execution_arn}/*/*"
-}
-
-# 4. CORS (Opcional, pero necesario para el frontend)
-resource "aws_apigatewayv2_cors_configuration" "cors_config" {
-  api_id = aws_apigatewayv2_api.http_api.id
-  allow_headers = ["content-type", "x-api-key"]
-  allow_methods = ["*"]
-  allow_origins = ["*"] 
-  max_age = 300
 }
