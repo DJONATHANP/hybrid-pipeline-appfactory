@@ -13,16 +13,17 @@ provider "aws" {
 }
 
 # 2. AWS Lambda
-# Archivo ZIP de la funci�n
+# Archivo ZIP de la función
 data "archive_file" "lambda_zip" {
   type        = "zip"
   source_dir  = "../api-lambda"
   output_path = "lambda_function_payload.zip"
 }
 
-# Rol de IAM para Lambda (permiso b�sico de ejecuci�n)
+# Rol de IAM para Lambda (permiso básico de ejecución)
 resource "aws_iam_role" "lambda_exec_role" {
-  name = "AppFactoryLambdaExecutionRole-V3"
+  # Nombre único final para evitar conflictos
+  name = "AppFactoryLambdaExecutionRole-FINAL-DEPLOY" 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -37,7 +38,7 @@ resource "aws_iam_role" "lambda_exec_role" {
   })
 }
 
-# Adjuntar politica para CloudWatch Logs
+# Adjuntar política para CloudWatch Logs
 resource "aws_iam_role_policy_attachment" "lambda_logs" {
   role       = aws_iam_role.lambda_exec_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
@@ -45,7 +46,8 @@ resource "aws_iam_role_policy_attachment" "lambda_logs" {
 
 # Recurso Lambda Function
 resource "aws_lambda_function" "api_lambda" {
-  function_name    = "AppFactoryProcessingAPI-V3"
+  # Nombre único final para evitar conflictos
+  function_name    = "AppFactoryProcessingAPI-FINAL-DEPLOY" 
   filename         = data.archive_file.lambda_zip.output_path
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
   handler          = "lambda_function.lambda_handler"
@@ -59,7 +61,7 @@ resource "aws_apigatewayv2_api" "http_api" {
   name          = "AppFactoryHybridAPI"
   protocol_type = "HTTP"
 
-  # CORRECCIÓN: Configuración CORS como bloque anidado
+  # Configuración CORS como bloque anidado (solucionado el error de recurso inválido)
   cors_configuration {
     allow_methods = ["*"]
     allow_origins = ["*"]
@@ -68,7 +70,7 @@ resource "aws_apigatewayv2_api" "http_api" {
   }
 }
 
-# Integracion Lambda
+# Integración Lambda
 resource "aws_apigatewayv2_integration" "lambda_integration" {
   api_id             = aws_apigatewayv2_api.http_api.id
   integration_type   = "AWS_PROXY"

@@ -54,7 +54,7 @@ jobs:
       - name: Configurar Ansible
         uses: dawidd6/action-ansible-playbook@v2
         with:
-          # Usamos un solo parámetro no conflictivo para instalar Ansible sin ejecutar un playbook.
+          # CORRECCIÓN: Usamos este parámetro no conflictivo para que la acción no pida 'playbook'.
           requirements: "" 
 
       - name: 2.1. Construir la Imagen del Frontend
