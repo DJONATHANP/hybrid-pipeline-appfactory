@@ -54,9 +54,8 @@ jobs:
       - name: Configurar Ansible
         uses: dawidd6/action-ansible-playbook@v2
         with:
-          # CORRECCIÓN FINAL: Añadimos 'playbook: ""' explícitamente para evitar el error.
+          # CORRECCIÓN DEFINITIVA: Solo el parámetro obligatorio con valor vacío.
           playbook: "" 
-          requirements: "" 
 
       - name: 2.1. Construir la Imagen del Frontend
         run: docker build -t appfactory/frontend:${{ github.sha }} ./frontend
