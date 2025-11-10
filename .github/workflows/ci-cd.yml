@@ -206,7 +206,8 @@ jobs:
           $ok = $false
           foreach ($i in 1..10) {
             try {
-              docker exec appfactory_proxy nginx -t && ($ok = $true; break)
+              docker exec appfactory_proxy nginx -t | Write-Host
+              if ($LASTEXITCODE -eq 0) { $ok = $true; break }
             } catch {}
             Start-Sleep -Seconds 2
           }
