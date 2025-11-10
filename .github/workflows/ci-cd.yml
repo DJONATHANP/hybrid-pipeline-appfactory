@@ -151,6 +151,15 @@ jobs:
             }
             if ($i -eq $retries) { throw "Docker no está disponible" }
           }
+      - name: Renderizar nginx.conf con endpoint y API key
+        shell: powershell
+        run: |
+          $endpoint = '${{ needs.hybrid_deploy.outputs.api_gateway_endpoint }}'
+          $apikey   = '${{ secrets.API_GATEWAY_KEY }}'
+          $nginx    = Get-Content 'nginx-proxy/nginx.conf' -Raw
+          $nginx    = $nginx -replace '\${API_GATEWAY_URL}', $endpoint
+          $nginx    = $nginx -replace '\${API_GATEWAY_KEY}', $apikey
+          Set-Content -Path 'nginx-proxy/nginx.conf' -Value $nginx -NoNewline
       - name: Inyectar host de API y API key en docker-compose.yml
         shell: powershell
         run: |
