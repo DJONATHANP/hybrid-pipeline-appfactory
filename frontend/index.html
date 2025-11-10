@@ -3,35 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <title>AppFactory Frontend Local</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root { --bg:#0b1020; --card:#121a2e; --text:#e6edf3; --muted:#8b98a5; --accent:#4f46e5; --accent-2:#22d3ee; }
+      *{box-sizing:border-box}
+      body{margin:0;background:radial-gradient(1200px 500px at 10% 0%,#0f162e 0%,#0b1020 40%),radial-gradient(1200px 500px at 90% 0%,#0f162e 0%,#0b1020 40%),var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial}
+      .wrap{max-width:920px;margin:48px auto;padding:0 20px}
+      .hero{display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:20px}
+      h1{font-size:clamp(24px,3.2vw,34px);margin:0;background:linear-gradient(90deg,var(--text),#a5b4fc);-webkit-background-clip:text;background-clip:text;color:transparent}
+      p{margin:0;color:var(--muted)}
+      .grid{display:grid;grid-template-columns:1fr;gap:16px}
+      @media(min-width:768px){.grid{grid-template-columns:1.3fr .7fr}}
+      .card{background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:18px}
+      .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:8px 0 0}
+      .btn{appearance:none;border:0;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#081225;font-weight:700;padding:10px 14px;border-radius:10px;cursor:pointer;box-shadow:0 6px 24px rgba(79,70,229,.35);transition:transform .08s ease}
+      .btn:hover{transform:translateY(-1px)}
+      .kbd{font:12px/1.2 ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;background:#0b1324;border:1px solid rgba(255,255,255,.08);padding:4px 6px;border-radius:8px;color:#bcd0e5}
+      .mono{font:13px/1.4 ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;white-space:pre-wrap;word-break:break-word}
+      .ok{color:#22d3ee}
+      .err{color:#fda4af}
+    </style>
 </head>
 <body>
-    <h1>Bienvenido a AppFactory!</h1>
-    <p>Este es el frontend local.</p>
-    <p>Llamando a la API de procesamiento (API Gateway/Lambda)...</p>
-    <div id="api-response">Cargando...</div>
-    <script>
-        // En un escenario real, aqui ira la logica de autenticacion (OIDC/OAuth2)
-        // para obtener un token y pasarlo a la llamada a la API.
-        // Simulamos la llamada a trav�s de NGINX, que act�a como proxy a la API Gateway de AWS.
-        const API_ENDPOINT = '/api/process';
+    <div class="wrap">
+      <div class="hero">
+        <div>
+          <h1>Bienvenido a AppFactory!</h1>
+          <p>Este es el frontend local.</p>
+        </div>
+        <button id="retry" class="btn" type="button">Obtener datos</button>
+      </div>
 
-        fetch(API_ENDPOINT, {
-            // Si usaramos una API Key, se agregara aqui:
-            // headers: { 'x-api-key': 'SU_API_KEY_SIMULADA' }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Respuesta de red no satisfactoria');
-            }
-            return response.json();
-        })
-        .then(data => {
-            document.getElementById('api-response').innerText = 'Respuesta de la API: ' + JSON.stringify(data);
-        })
-        .catch(error => {
-            document.getElementById('api-response').innerText = 'Error al conectar con la API: ' + error.message;
-            console.error('Error:', error);
-        });
+      <div class="grid">
+        <div class="card">
+          <p>Llamando a la API de procesamiento (API Gateway/Lambda)...</p>
+          <div class="row"><span class="kbd">GET</span><span>/api/process</span></div>
+          <div class="row"><span>Estado:</span> <strong id="state" class="ok">Listo</strong></div>
+        </div>
+
+        <div class="card">
+          <p>Respuesta de la API</p>
+          <pre id="api-response" class="mono">Cargando...</pre>
+        </div>
+      </div>
+    </div>
+    <script>
+        // Nota: en una app real aquí iría la autenticación (OIDC/OAuth2)
+        // para obtener un token y adjuntarlo a la petición.
+        // En este demo llamamos vía NGINX como reverse proxy hacia API Gateway (AWS).
+        const API_ENDPOINT = '/api/process';
+        const $out = document.getElementById('api-response');
+        const $state = document.getElementById('state');
+        const $btn = document.getElementById('retry');
+
+        function pretty(obj){
+          return JSON.stringify(obj, null, 2);
+        }
+
+        async function callApi(){
+          try{
+            $state.textContent = 'Llamando…';
+            $out.textContent = 'Cargando...';
+            const res = await fetch(API_ENDPOINT);
+            if(!res.ok) throw new Error('Respuesta de red no satisfactoria');
+            const data = await res.json();
+            $state.textContent = 'OK';
+            $state.className = 'ok';
+            $out.textContent = pretty(data);
+          }catch(err){
+            $state.textContent = 'Error';
+            $state.className = 'err';
+            $out.textContent = String(err);
+            console.error(err);
+          }
+        }
+
+        $btn.addEventListener('click', callApi);
+        callApi();
     </script>
 </body>
 </html>
