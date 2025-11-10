@@ -62,7 +62,7 @@ jobs:
       # 2. Local - Despliegue y Configuracion (Docker)
       # =========================================================
       - name: 2.1. Construir la Imagen del Frontend
-        run: docker build -t appfactory/frontend:${{ github.sha }} ./frontend
+        run: docker build -t pp09020/appfactory-frontend:${{ github.sha }} ./frontend
       
       - name: 2.2. Login en Docker Hub
         uses: docker/login-action@v3
@@ -71,12 +71,12 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
       
       - name: 2.3. Push de la Imagen del Frontend a Docker Hub
-        run: docker push appfactory/frontend:${{ github.sha }}
+        run: docker push pp09020/appfactory-frontend:${{ github.sha }}
 
       - name: 2.3.b Tag y Push de latest
         run: |
-          docker tag appfactory/frontend:${{ github.sha }} appfactory/frontend:latest
-          docker push appfactory/frontend:latest
+          docker tag pp09020/appfactory-frontend:${{ github.sha }} pp09020/appfactory-frontend:latest
+          docker push pp09020/appfactory-frontend:latest
 
   local_deploy:
     name: Despliegue Local (Self-Hosted)

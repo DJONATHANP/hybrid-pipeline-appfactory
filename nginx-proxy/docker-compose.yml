@@ -3,11 +3,13 @@ version: '3.8'
 services:
   # 1. Servicio del Frontend (servido por su propio NGINX en la imagen)
   frontend:
-    image: appfactory/frontend:latest # Nombre de la imagen para Ansible
+    image: pp09020/appfactory-frontend:latest # Imagen en tu namespace de Docker Hub
     container_name: appfactory_frontend
     # Permite al servicio 'nginx-proxy' acceder a este servicio por el nombre 'frontend'
     expose:
       - 80 
+    ports:
+      - "8090:80"
     restart: unless-stopped
     networks:
       - app-net
@@ -17,7 +19,7 @@ services:
     image: nginx:alpine
     container_name: appfactory_proxy
     ports:
-      - "80:80" 
+      - "8080:80" 
     # *** CAMBIO AQUÍ ***
     volumes:
       # Monta nginx.conf como plantilla; el entrypoint de nginx hara envsubst a conf.d
@@ -25,8 +27,8 @@ services:
     # *******************
     environment:
       # Valor placeholder. Terraform/Ansible lo reemplazaran
-      API_GATEWAY_URL: "fwr2lm1bal.execute-api.us-east-1.amazonaws.com"
-      API_GATEWAY_KEY: "PLACEHOLDER_API_KEY"
+      API_GATEWAY_URL: "0j59huq5h0.execute-api.us-east-1.amazonaws.com"
+      API_GATEWAY_KEY: "TEST-KEY-123"
     depends_on:
       - frontend # Asegura que el frontend este arriba antes que el proxy
     restart: unless-stopped
