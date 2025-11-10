@@ -1,3 +1,3 @@
 FROM nginx:alpine
-# Copiamos la configuracion ya renderizada en el workflow
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Usamos configuracion principal (main) ya renderizada por el workflow
+COPY nginx-main.conf /etc/nginx/nginx.conf

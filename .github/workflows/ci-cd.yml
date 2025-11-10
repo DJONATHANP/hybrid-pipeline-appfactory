@@ -151,20 +151,20 @@ jobs:
             }
             if ($i -eq $retries) { throw "Docker no está disponible" }
           }
-      - name: Renderizar nginx.conf con endpoint y API key
+      - name: Renderizar nginx-main.conf con endpoint y API key
         shell: powershell
         run: |
           $endpoint = '${{ needs.hybrid_deploy.outputs.api_gateway_endpoint }}'
           $apikey   = '${{ secrets.API_GATEWAY_KEY }}'
-          $nginx    = Get-Content 'nginx-proxy/nginx.conf' -Raw
+          $nginx    = Get-Content 'nginx-proxy/nginx-main.conf' -Raw
           $nginx    = $nginx -replace '\${API_GATEWAY_URL}', $endpoint
           $nginx    = $nginx -replace '\${API_GATEWAY_KEY}', $apikey
           # Normalizar CRLF -> LF y guardar como UTF-8 sin BOM
           $nginxLF  = $nginx -replace "`r`n", "`n"
           $enc = New-Object System.Text.UTF8Encoding($false)
-          [System.IO.File]::WriteAllText('nginx-proxy/nginx.conf', $nginxLF, $enc)
-          Write-Host '--- nginx.conf (primeras 30 lineas) ---'
-          (Get-Content 'nginx-proxy/nginx.conf' -TotalCount 30) | ForEach-Object { Write-Host $_ }
+          [System.IO.File]::WriteAllText('nginx-proxy/nginx-main.conf', $nginxLF, $enc)
+          Write-Host '--- nginx-main.conf (primeras 30 lineas) ---'
+          (Get-Content 'nginx-proxy/nginx-main.conf' -TotalCount 30) | ForEach-Object { Write-Host $_ }
       - name: Inyectar host de API y API key en docker-compose.yml
         shell: powershell
         run: |
@@ -184,8 +184,8 @@ jobs:
         shell: powershell
         run: |
           docker run --rm appfactory-proxy-local:latest nginx -t
-          Write-Host '--- default.conf en la imagen ---'
-          docker run --rm appfactory-proxy-local:latest sh -lc 'sed -n "1,80p" /etc/nginx/conf.d/default.conf'
+          Write-Host '--- nginx.conf en la imagen ---'
+          docker run --rm appfactory-proxy-local:latest sh -lc 'sed -n "1,80p" /etc/nginx/nginx.conf'
       - name: Hacer pull de imágenes (solo frontend)
         shell: powershell
         run: |
