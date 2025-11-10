@@ -3,6 +3,10 @@ version: '3.8'
 services:
   # 1. Servicio del Frontend (servido por su propio NGINX en la imagen)
   frontend:
+    # Construye la imagen desde el Dockerfile en la carpeta 'frontend'
+    build: 
+      context: ../frontend
+      dockerfile: Dockerfile
     image: appfactory/frontend:latest # Nombre de la imagen para Ansible
     container_name: appfactory_frontend
     # Permite al servicio 'nginx-proxy' acceder a este servicio por el nombre 'frontend'
@@ -16,19 +20,18 @@ services:
   nginx-proxy:
     image: nginx:alpine
     container_name: appfactory_proxy
+    # Mapea el puerto 80 del host (tu PC) al puerto 80 del contenedor
     ports:
       - "80:80" 
-    # *** CAMBIO AQU√ç ***
+    # Monta la configuraciÛn personalizada de NGINX
     volumes:
-      # Monta nginx.conf como plantilla; el entrypoint de nginx hara envsubst a conf.d
-      - ./nginx.conf:/etc/nginx/templates/default.conf.template:ro 
-    # *******************
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    # La URL de la API Gateway se inyectar· desde el pipeline/Ansible
     environment:
-      # Valor placeholder. Terraform/Ansible lo reemplazaran
-      API_GATEWAY_URL: "fwr2lm1bal.execute-api.us-east-1.amazonaws.com"
-      API_GATEWAY_KEY: "PLACEHOLDER_API_KEY"
+      # Valor placeholder. Terraform lo reemplazar·
+      API_GATEWAY_URL: "api-gateway-placeholder.execute-api.us-east-1.amazonaws.com" 
     depends_on:
-      - frontend # Asegura que el frontend este arriba antes que el proxy
+      - frontend # Asegura que el frontend estÈ arriba antes que el proxy
     restart: unless-stopped
     networks:
       - app-net

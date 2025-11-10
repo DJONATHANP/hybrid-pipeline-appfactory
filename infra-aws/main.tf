@@ -54,6 +54,11 @@ resource "aws_lambda_function" "api_lambda" {
   runtime          = "python3.11"
   role             = aws_iam_role.lambda_exec_role.arn
   timeout          = 10
+  environment {
+    variables = {
+      LAMBDA_API_KEY = var.lambda_api_key
+    }
+  }
 }
 
 # 3. AWS API Gateway (API REST)

@@ -8,10 +8,14 @@ on:
 
 env:
   AWS_REGION: us-east-1 # Define la región de AWS
+  # Pasamos la API key a Terraform como variable de entorno TF_VAR
+  TF_VAR_lambda_api_key: ${{ secrets.API_GATEWAY_KEY }}
 
 jobs:
   hybrid_deploy:
     runs-on: ubuntu-latest # Se ejecuta en un runner de GitHub
+    outputs:
+      api_gateway_endpoint: ${{ steps.get_output.outputs.api_endpoint }}
 
     steps:
       - name: Checkout del Codigo
@@ -44,8 +48,9 @@ jobs:
         run: |
           # Captura el output de Terraform
           API_ENDPOINT=$(terraform output -raw api_gateway_endpoint)
-          # Exporta la variable para que esté disponible en 'env' para el resto de los pasos
           echo "API_GATEWAY_ENDPOINT=$API_ENDPOINT" >> $GITHUB_ENV
+          # Exponer como output del job para otros jobs
+          echo "api_endpoint=$API_ENDPOINT" >> $GITHUB_OUTPUT
         working-directory: ./infra-aws
 
       # =========================================================
@@ -73,9 +78,23 @@ jobs:
         run: |
           echo "Simulando ejecución de Ansible en el host local..."
           # Usamos ${{ env.API_GATEWAY_ENDPOINT }} para la URL obtenida del output de Terraform
-          echo "Ejecutaría: ansible-playbook config-local/deploy-local.yml -e api_gateway_url=${{ env.API_GATEWAY_ENDPOINT }} -e frontend_image=appfactory/frontend:${{ github.sha }}"
+          echo "Ejecutaría: ansible-playbook config-local/deploy-local.yml -e api_gateway_url=${{ env.API_GATEWAY_ENDPOINT }} -e api_gateway_key=${{ secrets.API_GATEWAY_KEY }} -e frontend_image=appfactory/frontend:${{ github.sha }}"
           echo "---"
           echo "El host local haría:"
           echo "1. docker pull appfactory/frontend:${{ github.sha }}"
-          echo "2. Reemplazaría API_GATEWAY_URL en docker-compose.yml con: ${{ env.API_GATEWAY_ENDPOINT }}"
+          echo "2. Reemplazaría API_GATEWAY_URL y API_GATEWAY_KEY en docker-compose.yml"
           echo "3. docker compose up -d --force-recreate nginx-proxy"
+
+  local_deploy:
+    name: Despliegue Local (Self-Hosted)
+    needs: hybrid_deploy
+    runs-on: self-hosted
+    steps:
+      - name: Checkout del Codigo
+        uses: actions/checkout@v4
+      - name: Ejecutar Ansible en host local
+        run: |
+          ansible-playbook config-local/deploy-local.yml \
+            -e api_gateway_url=${{ needs.hybrid_deploy.outputs.api_gateway_endpoint }} \
+            -e api_gateway_key='${{ secrets.API_GATEWAY_KEY }}' \
+            -e frontend_image=appfactory/frontend:${{ github.sha }}

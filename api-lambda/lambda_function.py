@@ -1,18 +1,43 @@
 import json
 import time
+import os
 
 def lambda_handler(event, context):
     """
-    Funci髇 de AWS Lambda que simula un procesamiento intensivo.
+    Funci贸n de AWS Lambda que simula un procesamiento intensivo.
     """
     start_time = time.time()
+    # Autorizaci贸n simple por API Key
+    try:
+        headers = event.get('headers', {}) or {}
+        provided_key = headers.get('x-api-key') or headers.get('X-Api-Key')
+        expected_key = os.environ.get('LAMBDA_API_KEY')
+        if not expected_key or provided_key != expected_key:
+            return {
+                'statusCode': 401,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({'status': 'unauthorized'})
+            }
+    except Exception:
+        # En caso de estructura inesperada, negar acceso por seguridad
+        return {
+            'statusCode': 401,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            },
+            'body': json.dumps({'status': 'unauthorized'})
+        }
     
-    # Simulaci髇 de un procesamiento de datos o una l骻ica compleja
+    # Simulaci贸n de un procesamiento de datos o una l贸gica compleja
     processing_result = {
         "status": "success",
         "service": "AppFactory Hybrid Backend (AWS Lambda)",
         "timestamp": int(start_time * 1000),
-        "data": "Datos procesados con 閤ito en la nube"
+        "data": "Datos procesados con 茅xito en la nube"
     }
 
     end_time = time.time()
@@ -25,7 +50,7 @@ def lambda_handler(event, context):
         'headers': {
             'Content-Type': 'application/json',
             # CORS para permitir la llamada desde el frontend local (cambia * por tu dominio si es necesario)
-            'Access-Control-Allow-Origin': '*' 
+            'Access-Control-Allow-Origin': '*'
         },
         'body': json.dumps(processing_result)
     }

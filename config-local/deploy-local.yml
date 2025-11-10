@@ -1,14 +1,15 @@
 ---
-- name: Despliegue y Actualización de Componentes Locales
-  hosts: localhost # Ejecutar en la máquina local (donde está Docker Desktop)
+- name: Despliegue y Actualizacion de Componentes Locales
+  hosts: localhost # Ejecutar en la maquina local (donde esta Docker Desktop)
   connection: local
   vars:
-    # Esta variable será inyectada por el pipeline (GitHub Actions)
+    # Esta variable sera inyectada por el pipeline (GitHub Actions)
     api_gateway_url: "api-gateway-placeholder.execute-api.us-east-1.amazonaws.com" 
+    api_gateway_key: "PLACEHOLDER_API_KEY"
     project_path: "{{ playbook_dir }}/.." # Ruta al directorio principal del proyecto
 
   tasks:
-    - name: 1. Crear la Imagen más Reciente del Frontend
+    - name: 1. Crear la Imagen mas Reciente del Frontend
       community.docker.docker_image:
         name: appfactory/frontend:latest
         build:
@@ -31,8 +32,16 @@
         backup: yes
       delegate_to: localhost
 
+    - name: 3.1 Reemplazar la API Key de la API Gateway en docker-compose.yml
+      ansible.builtin.replace:
+        path: "{{ project_path }}/nginx-proxy/docker-compose.yml"
+        regexp: 'API_GATEWAY_KEY: "(.*)"'
+        replace: 'API_GATEWAY_KEY: "{{ api_gateway_key }}"'
+        backup: yes
+      delegate_to: localhost
+
     - name: 4. Reiniciar/Actualizar el Stack de Docker Compose
-      community.docker.docker_compose:
-        project_src: "{{ project_path }}/nginx-proxy"
-        state: present # Mantiene el stack en ejecución
-        # pull: yes # Esto se puede omitir si ya se hizo pull/build
+      # Usamos el modulo 'command' para llamar al CLI de docker-compose que instalamos.
+      # Esto evita el problema de dependencias de Python.
+      ansible.builtin.command: 
+        cmd: docker compose -f {{ project_path }}/nginx-proxy/docker-compose.yml up -d --force-recreate
