@@ -58,6 +58,10 @@ jobs:
           echo "api_endpoint=$API_ENDPOINT" >> $GITHUB_OUTPUT
         working-directory: ./infra-aws
 
+      - name: Mostrar endpoint en logs
+        run: |
+          echo "API endpoint actual: $API_GATEWAY_ENDPOINT"
+
       # =========================================================
       # 2. Local - Despliegue y Configuracion (Docker)
       # =========================================================
