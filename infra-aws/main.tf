@@ -10,10 +10,19 @@ terraform {
       version = "~> 3.0"
     }
   }
+  backend "s3" {}
 }
 
 provider "aws" {
   region = var.aws_region
+}
+
+locals {
+  common_tags = {
+    project = "appfactory-hybrid"
+    owner   = "pp09020"
+    env     = "dev"
+  }
 }
 
 # Sufijo aleatorio para evitar colisiones en recursos con nombre fijo
@@ -45,6 +54,7 @@ resource "aws_iam_role" "lambda_exec_role" {
       }
     ]
   })
+  tags = local.common_tags
 }
 
 # Adjuntar política para CloudWatch Logs
@@ -68,6 +78,7 @@ resource "aws_lambda_function" "api_lambda" {
       LAMBDA_API_KEY = var.lambda_api_key
     }
   }
+  tags = local.common_tags
 }
 
 # 3. AWS API Gateway (API REST)
@@ -82,6 +93,7 @@ resource "aws_apigatewayv2_api" "http_api" {
     allow_headers = ["content-type", "x-api-key"]
     max_age       = 300
   }
+  tags = local.common_tags
 }
 
 # Integración Lambda
