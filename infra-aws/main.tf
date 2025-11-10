@@ -5,11 +5,20 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
   }
 }
 
 provider "aws" {
   region = var.aws_region
+}
+
+# Sufijo aleatorio para evitar colisiones en recursos con nombre fijo
+resource "random_id" "suffix" {
+  byte_length = 2
 }
 
 # 2. AWS Lambda
@@ -22,8 +31,8 @@ data "archive_file" "lambda_zip" {
 
 # Rol de IAM para Lambda (permiso básico de ejecución)
 resource "aws_iam_role" "lambda_exec_role" {
-  # Nombre único final para evitar conflictos
-  name = "AppFactoryLambdaExecutionRole-FINAL-DEPLOY" 
+  # Nombre con sufijo aleatorio para evitar conflictos en ejecuciones sin estado remoto
+  name = "AppFactoryLambdaExecutionRole-${random_id.suffix.hex}"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -46,8 +55,8 @@ resource "aws_iam_role_policy_attachment" "lambda_logs" {
 
 # Recurso Lambda Function
 resource "aws_lambda_function" "api_lambda" {
-  # Nombre único final para evitar conflictos
-  function_name    = "AppFactoryProcessingAPI-FINAL-DEPLOY" 
+  # Nombre con sufijo aleatorio para evitar conflictos en ejecuciones sin estado remoto
+  function_name    = "AppFactoryProcessingAPI-${random_id.suffix.hex}" 
   filename         = data.archive_file.lambda_zip.output_path
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
   handler          = "lambda_function.lambda_handler"
