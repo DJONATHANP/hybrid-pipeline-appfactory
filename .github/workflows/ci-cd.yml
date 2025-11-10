@@ -168,3 +168,23 @@ jobs:
         shell: powershell
         run: |
           docker compose -f nginx-proxy/docker-compose.yml up -d --force-recreate
+
+      - name: Mostrar docker ps
+        shell: powershell
+        run: |
+          docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+      - name: Probar HTTP local (con reintentos)
+        shell: powershell
+        run: |
+          $retries = 20
+          for ($i=1; $i -le $retries; $i++) {
+            try {
+              $r1 = (curl.exe -s -o NUL -w "%{http_code}" http://localhost:8080/)
+              $r2 = (curl.exe -s -o NUL -w "%{http_code}" http://localhost:8080/api/process)
+              Write-Host "Intento $i => /:$r1  /api/process:$r2"
+              if ($r1 -ne "000" -and $r2 -ne "000") { break }
+            } catch { }
+            Start-Sleep -Seconds 2
+          }
+          if ($r1 -eq "000" -or $r2 -eq "000") { throw "No responde localhost:8080" }
