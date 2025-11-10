@@ -179,10 +179,10 @@ jobs:
         shell: powershell
         run: |
           docker build -t appfactory-proxy-local:latest nginx-proxy
-      - name: Hacer pull de imágenes
+      - name: Hacer pull de imágenes (solo frontend)
         shell: powershell
         run: |
-          docker compose -f nginx-proxy/docker-compose.yml pull
+          docker compose -f nginx-proxy/docker-compose.yml pull frontend
       - name: Levantar/actualizar el stack
         shell: powershell
         run: |
