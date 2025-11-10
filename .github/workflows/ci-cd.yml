@@ -196,4 +196,12 @@ jobs:
             } catch { }
             Start-Sleep -Seconds 2
           }
-          if ($r1 -eq "000" -or $r2 -eq "000") { throw "No responde localhost:8080" }
+          if ($r1 -eq "000" -or $r2 -eq "000") {
+            Write-Host '--- docker ps ---'
+            docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+            Write-Host '--- logs proxy (ultimas 200 lineas) ---'
+            docker logs appfactory_proxy --tail=200
+            Write-Host '--- conf proxy efectiva ---'
+            try { docker exec appfactory_proxy cat /etc/nginx/conf.d/default.conf } catch {}
+            throw "No responde localhost:8080"
+          }
