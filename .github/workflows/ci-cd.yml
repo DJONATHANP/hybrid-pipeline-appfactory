@@ -159,7 +159,12 @@ jobs:
           $nginx    = Get-Content 'nginx-proxy/nginx.conf' -Raw
           $nginx    = $nginx -replace '\${API_GATEWAY_URL}', $endpoint
           $nginx    = $nginx -replace '\${API_GATEWAY_KEY}', $apikey
-          Set-Content -Path 'nginx-proxy/nginx.conf' -Value $nginx -NoNewline
+          # Normalizar CRLF -> LF y guardar como UTF-8 sin BOM
+          $nginxLF  = $nginx -replace "`r`n", "`n"
+          $enc = New-Object System.Text.UTF8Encoding($false)
+          [System.IO.File]::WriteAllText('nginx-proxy/nginx.conf', $nginxLF, $enc)
+          Write-Host '--- nginx.conf (primeras 30 lineas) ---'
+          (Get-Content 'nginx-proxy/nginx.conf' -TotalCount 30) | ForEach-Object { Write-Host $_ }
       - name: Inyectar host de API y API key en docker-compose.yml
         shell: powershell
         run: |
