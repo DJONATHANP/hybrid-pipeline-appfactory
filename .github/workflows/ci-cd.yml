@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  # Nota: puedes lanzar este workflow manualmente si lo necesitas
   workflow_dispatch: # También lo podemos lanzar a mano cuando haga falta
 
 env:
@@ -25,6 +26,7 @@ jobs:
       api_gateway_endpoint: ${{ steps.get_output.outputs.api_endpoint }}
 
     steps:
+      # Inicio del job: obtenemos el código de la rama actual
       - name: Checkout del código
         uses: actions/checkout@v4
       - name: Workflow version marker
@@ -43,6 +45,7 @@ jobs:
       - name: Preparar Terraform
         uses: hashicorp/setup-terraform@v3
 
+      # Preparamos el backend remoto para que Terraform recuerde el estado entre ejecuciones
       - name: Preparar backend remoto (S3 + DynamoDB)
         run: |
           set -e
@@ -94,6 +97,7 @@ jobs:
           echo "api_endpoint=$API_ENDPOINT" >> $GITHUB_OUTPUT
         working-directory: ./infra-aws
 
+      # Mostramos el endpoint para depuración rápida en los logs del run
       - name: Mostrar endpoint en los logs
         run: |
           echo "API endpoint actual: $API_GATEWAY_ENDPOINT"
@@ -123,6 +127,7 @@ jobs:
     needs: hybrid_deploy
     runs-on: self-hosted
     steps:
+      # A partir de aquí, el runner self-hosted actualiza el entorno local
       - name: Checkout del código
         uses: actions/checkout@v4
       - name: Docker login (opcional)
