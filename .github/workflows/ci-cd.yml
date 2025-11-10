@@ -174,6 +174,11 @@ jobs:
           $compose  = $compose -replace 'API_GATEWAY_URL:\s*".*"', "API_GATEWAY_URL: `"$endpoint`""
           $compose  = $compose -replace 'API_GATEWAY_KEY:\s*".*"', "API_GATEWAY_KEY: `"$apikey`""
           Set-Content -Path 'nginx-proxy/docker-compose.yml' -Value $compose -NoNewline
+
+      - name: Construir imagen local del proxy (conf incluida)
+        shell: powershell
+        run: |
+          docker build -t appfactory-proxy-local:latest nginx-proxy
       - name: Hacer pull de imágenes
         shell: powershell
         run: |

@@ -16,15 +16,10 @@ services:
 
   # 2. Servicio de Reverse Proxy
   nginx-proxy:
-    image: nginx:alpine
+    image: appfactory-proxy-local:latest
     container_name: appfactory_proxy
     ports:
       - "8080:80" 
-    # *** CAMBIO AQUÍ ***
-    volumes:
-      # Montamos la config ya renderizada directamente (sin templates/envsubst)
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro 
-    # *******************
     environment:
       # Valor placeholder. Terraform/Ansible lo reemplazaran
       API_GATEWAY_URL: "v97kdeq05j.execute-api.us-east-1.amazonaws.com"
