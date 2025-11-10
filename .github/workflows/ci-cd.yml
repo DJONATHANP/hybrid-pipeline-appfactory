@@ -134,10 +134,12 @@ jobs:
       - name: Inyectar host de API y API key en docker-compose.yml
         shell: powershell
         run: |
-          $compose = Get-Content "nginx-proxy/docker-compose.yml" -Raw
-          $compose = $compose -replace 'API_GATEWAY_URL: ".*"', "API_GATEWAY_URL: \"${{ needs.hybrid_deploy.outputs.api_gateway_endpoint }}\""
-          $compose = $compose -replace 'API_GATEWAY_KEY: ".*"', "API_GATEWAY_KEY: \"${{ secrets.API_GATEWAY_KEY }}\""
-          Set-Content -Path "nginx-proxy/docker-compose.yml" -Value $compose -NoNewline
+          $endpoint = '${{ needs.hybrid_deploy.outputs.api_gateway_endpoint }}'
+          $apikey   = '${{ secrets.API_GATEWAY_KEY }}'
+          $compose  = Get-Content 'nginx-proxy/docker-compose.yml' -Raw
+          $compose  = $compose -replace 'API_GATEWAY_URL:\s*".*"', "API_GATEWAY_URL: `"$endpoint`""
+          $compose  = $compose -replace 'API_GATEWAY_KEY:\s*".*"', "API_GATEWAY_KEY: `"$apikey`""
+          Set-Content -Path 'nginx-proxy/docker-compose.yml' -Value $compose -NoNewline
       - name: Hacer pull de imágenes
         shell: powershell
         run: |
