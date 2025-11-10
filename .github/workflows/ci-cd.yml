@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-  # Nota: puedes lanzar este workflow manualmente si lo necesitas
+  # Ejecucion manual
   workflow_dispatch: # También lo podemos lanzar a mano cuando haga falta
 
 env:
@@ -135,6 +135,21 @@ jobs:
         run: |
           if ($env:DOCKER_USERNAME -and $env:DOCKER_PASSWORD) {
             docker login -u "$env:DOCKER_USERNAME" -p "$env:DOCKER_PASSWORD"
+          }
+      - name: Esperar a que Docker esté listo
+        shell: powershell
+        run: |
+          $retries = 30
+          for ($i=1; $i -le $retries; $i++) {
+            try {
+              docker info > $null
+              Write-Host "Docker OK"
+              break
+            } catch {
+              Write-Host "Docker no responde aún, reintentando ($i/$retries)..."
+              Start-Sleep -Seconds 2
+            }
+            if ($i -eq $retries) { throw "Docker no está disponible" }
           }
       - name: Inyectar host de API y API key en docker-compose.yml
         shell: powershell
