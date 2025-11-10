@@ -1,4 +1,4 @@
-name: Pipeline CI/CD Híbrido
+name: Pipeline CI/CD Híbrido v2
 
 on:
   push:
@@ -14,12 +14,17 @@ env:
 jobs:
   hybrid_deploy:
     runs-on: ubuntu-latest # Se ejecuta en un runner de GitHub
+    concurrency:
+      group: hybrid-deploy-main
+      cancel-in-progress: true
     outputs:
       api_gateway_endpoint: ${{ steps.get_output.outputs.api_endpoint }}
 
     steps:
       - name: Checkout del Codigo
         uses: actions/checkout@v4
+      - name: Workflow version marker
+        run: echo "Workflow version=v2"
 
       # =========================================================
       # 1. AWS - Despliegue de Infraestructura (Terraform)
@@ -54,14 +59,8 @@ jobs:
         working-directory: ./infra-aws
 
       # =========================================================
-      # 2. Local - Despliegue y Configuracion (Ansible + Docker)
+      # 2. Local - Despliegue y Configuracion (Docker)
       # =========================================================
-      - name: Configurar Ansible
-        uses: dawidd6/action-ansible-playbook@v2
-        with:
-          # CORRECCIÓN DEFINITIVA: Solo el parámetro obligatorio con valor vacío.
-          playbook: "" 
-
       - name: 2.1. Construir la Imagen del Frontend
         run: docker build -t appfactory/frontend:${{ github.sha }} ./frontend
       
@@ -74,16 +73,10 @@ jobs:
       - name: 2.3. Push de la Imagen del Frontend a Docker Hub
         run: docker push appfactory/frontend:${{ github.sha }}
 
-      - name: 2.4. Simulación de Ejecución de Ansible Local
+      - name: 2.3.b Tag y Push de latest
         run: |
-          echo "Simulando ejecución de Ansible en el host local..."
-          # Usamos ${{ env.API_GATEWAY_ENDPOINT }} para la URL obtenida del output de Terraform
-          echo "Ejecutaría: ansible-playbook config-local/deploy-local.yml -e api_gateway_url=${{ env.API_GATEWAY_ENDPOINT }} -e api_gateway_key=${{ secrets.API_GATEWAY_KEY }} -e frontend_image=appfactory/frontend:${{ github.sha }}"
-          echo "---"
-          echo "El host local haría:"
-          echo "1. docker pull appfactory/frontend:${{ github.sha }}"
-          echo "2. Reemplazaría API_GATEWAY_URL y API_GATEWAY_KEY en docker-compose.yml"
-          echo "3. docker compose up -d --force-recreate nginx-proxy"
+          docker tag appfactory/frontend:${{ github.sha }} appfactory/frontend:latest
+          docker push appfactory/frontend:latest
 
   local_deploy:
     name: Despliegue Local (Self-Hosted)
@@ -92,9 +85,24 @@ jobs:
     steps:
       - name: Checkout del Codigo
         uses: actions/checkout@v4
-      - name: Ejecutar Ansible en host local
+      - name: Docker login (opcional)
+        shell: powershell
         run: |
-          ansible-playbook config-local/deploy-local.yml \
-            -e api_gateway_url=${{ needs.hybrid_deploy.outputs.api_gateway_endpoint }} \
-            -e api_gateway_key='${{ secrets.API_GATEWAY_KEY }}' \
-            -e frontend_image=appfactory/frontend:${{ github.sha }}
+          if ($env:DOCKER_USERNAME -and $env:DOCKER_PASSWORD) {
+            docker login -u "$env:DOCKER_USERNAME" -p "$env:DOCKER_PASSWORD"
+          }
+      - name: Inyectar API host y API key en docker-compose.yml
+        shell: powershell
+        run: |
+          $compose = Get-Content "nginx-proxy/docker-compose.yml" -Raw
+          $compose = $compose -replace 'API_GATEWAY_URL: ".*"', "API_GATEWAY_URL: \"${{ needs.hybrid_deploy.outputs.api_gateway_endpoint }}\""
+          $compose = $compose -replace 'API_GATEWAY_KEY: ".*"', "API_GATEWAY_KEY: \"${{ secrets.API_GATEWAY_KEY }}\""
+          Set-Content -Path "nginx-proxy/docker-compose.yml" -Value $compose -NoNewline
+      - name: Pull de imagenes
+        shell: powershell
+        run: |
+          docker compose -f nginx-proxy/docker-compose.yml pull
+      - name: Levantar/actualizar stack
+        shell: powershell
+        run: |
+          docker compose -f nginx-proxy/docker-compose.yml up -d --force-recreate
