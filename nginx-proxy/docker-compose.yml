@@ -8,8 +8,6 @@ services:
     # Permite al servicio 'nginx-proxy' acceder a este servicio por el nombre 'frontend'
     expose:
       - 80 
-    ports:
-      - "8090:80"
     restart: unless-stopped
     networks:
       - app-net
